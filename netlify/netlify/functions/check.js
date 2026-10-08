@@ -1,8 +1,35 @@
 const crypto = require("crypto");
 
-const LINK_DICH = "https://deft-gingersnap-3ff627.netlify.app";
 const MIN_GIAY = 20;    // mở nhanh hơn số này thì chặn
 const MAX_GIAY = 1800;  // quá 30 phút thì hết hạn
+
+function taoKey() {
+  const h = crypto.randomBytes(8).toString("hex").toUpperCase();
+  return `KEY-${h.slice(0, 4)}-${h.slice(4, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}`;
+}
+
+function trang(key) {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lấy Key</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 40px 16px; }
+    .box { background: #222; border-radius: 12px; padding: 20px; margin: 20px auto; max-width: 420px; word-break: break-all; font-size: 20px; }
+    button { background: #4f46e5; color: #fff; border: 0; border-radius: 8px; padding: 12px 24px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>🔑 Lấy Key</h1>
+  <p>🎉 Bạn đã vượt xong! Key của bạn:</p>
+  <div class="box" id="key">${key}</div>
+  <button onclick="navigator.clipboard.writeText(document.getElementById('key').innerText);this.innerText='Đã sao chép!'">Sao chép key</button>
+  <p><small>Key được tạo mới mỗi lần vượt.</small></p>
+</body>
+</html>`;
+}
 
 exports.handler = async (event) => {
   const t = (event.queryStringParameters || {}).t || "";
@@ -31,8 +58,12 @@ exports.handler = async (event) => {
   }
 
   return {
-    statusCode: 302,
-    headers: { Location: LINK_DICH, "Cache-Control": "no-store" },
+    statusCode: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+    body: trang(taoKey()),
   };
 };
 
@@ -42,4 +73,4 @@ function chan() {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
     body: "Link không hợp lệ hoặc bạn chưa vượt link đúng cách.",
   };
-    }
+}
