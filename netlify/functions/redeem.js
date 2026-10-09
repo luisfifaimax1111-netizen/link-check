@@ -30,7 +30,7 @@ exports.handler = async (event) => {
   try {
     const { getStore, connectLambda } = await import("@netlify/blobs");
     connectLambda(event);
-    const store = getStore({ name: "keys", consistency: "strong" });
+    const store = getStore("keys");
     const rec = await store.get("key-" + key, { type: "json" });
 
     if (!rec) return tra(200, { ok: false, msg: "Key không tồn tại." });
