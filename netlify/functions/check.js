@@ -3,8 +3,12 @@ const crypto = require("crypto");
 const MIN_GIAY = 20;    // mở nhanh hơn số này thì chặn
 const MAX_GIAY = 1800;  // quá 30 phút thì hết hạn
 
-function taoKey() {
-  const h = crypto.randomBytes(8).toString("hex").toUpperCase();
+function taoKey(sig) {
+  const h = crypto
+    .createHmac("sha256", process.env.SECRET)
+    .update("key:" + sig)
+    .digest("hex")
+    .toUpperCase();
   return `KEY-${h.slice(0, 4)}-${h.slice(4, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}`;
 }
 
@@ -57,17 +61,13 @@ exports.handler = async (event) => {
     return chan("Link không hợp lệ hoặc bạn chưa vượt link đúng cách.");
   }
 
-  let key;
+  const key = taoKey(sig);
   try {
     const { getStore, connectLambda } = await import("@netlify/blobs");
     connectLambda(event);
-    const store = getStore({ name: "keys", consistency: "strong" });
-    const cu = await store.get("link-" + sig);
-    if (cu) {
-      key = cu;
-    } else {
-      key = taoKey();
-      await store.set("link-" + sig, key);
+    const store = getStore("keys");
+    const cu = await store.get("key-" + key);
+    if (!cu) {
       await store.setJSON("key-" + key, { uid, used: false, ts: Date.now() });
     }
   } catch (e) {
