@@ -26,7 +26,7 @@ function trang(key) {
   <p>🎉 Bạn đã vượt xong! Key của bạn:</p>
   <div class="box" id="key">${key}</div>
   <button onclick="navigator.clipboard.writeText(document.getElementById('key').innerText);this.innerText='Đã sao chép!'">Sao chép key</button>
-  <p><small>Key được tạo mới mỗi lần vượt.</small></p>
+  <p><small>Vào Discord, dùng lệnh /redeem để nhập key nhận điểm.</small></p>
 </body>
 </html>`;
 }
@@ -36,7 +36,7 @@ exports.handler = async (event) => {
   const parts = t.split(".");
 
   if (parts.length !== 3 || !process.env.SECRET) {
-    return chan();
+    return chan("Link không hợp lệ hoặc bạn chưa vượt link đúng cách.");
   }
 
   const [uid, ts, sig] = parts;
@@ -54,23 +54,28 @@ exports.handler = async (event) => {
   const dungThoiGian = tuoi >= MIN_GIAY && tuoi <= MAX_GIAY;
 
   if (!dungChuKy || !dungThoiGian) {
-    return chan();
+    return chan("Link không hợp lệ hoặc bạn chưa vượt link đúng cách.");
+  }
+
+  let key;
+  try {
+    const { getStore, connectLambda } = await import("@netlify/blobs");
+    connectLambda(event);
+    const store = getStore({ name: "keys", consistency: "strong" });
+    const cu = await store.get("link-" + sig);
+    if (cu) {
+      key = cu;
+    } else {
+      key = taoKey();
+      await store.set("link-" + sig, key);
+      await store.setJSON("key-" + key, { uid, used: false, ts: Date.now() });
+    }
+  } catch (e) {
+    console.error("Lỗi lưu key:", e);
+    return chan("Lỗi hệ thống, vui lòng thử lại sau.");
   }
 
   return {
     statusCode: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-    body: trang(taoKey()),
-  };
-};
-
-function chan() {
-  return {
-    statusCode: 403,
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-    body: "Link không hợp lệ hoặc bạn chưa vượt link đúng cách.",
-  };
-}
+    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+    body: trang(k
