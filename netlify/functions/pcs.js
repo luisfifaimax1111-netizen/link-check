@@ -2,20 +2,31 @@ const crypto = require("crypto");
 
 const MAX_GIAY = 1800; // link hết hạn sau 30 phút
 
-function chan() {
+// Địa chỉ API từng loại nhiệm vụ của Phiên Chợ Số
+const API = {
+  tukhoa: "https://api.phienchoso.com/tukhoa.php",
+  review: "", // điền địa chỉ API Review vào đây khi có
+};
+
+function chan(msg) {
   return {
     statusCode: 403,
     headers: { "Content-Type": "text/plain; charset=utf-8" },
-    body: "Link không hợp lệ hoặc đã hết hạn.",
+    body: msg,
   };
 }
 
 exports.handler = async (event) => {
-  const t = (event.queryStringParameters || {}).t || "";
+  const q = event.queryStringParameters || {};
+  const t = q.t || "";
+  const loai = q.loai || "tukhoa";
   const parts = t.split(".");
 
   if (parts.length !== 3 || !process.env.SECRET || !process.env.PCS_TOKEN) {
-    return chan();
+    return chan("Link không hợp lệ hoặc đã hết hạn.");
+  }
+  if (!API[loai]) {
+    return chan("Loại nhiệm vụ này chưa được cấu hình.");
   }
 
   const [uid, ts, sig] = parts;
@@ -31,13 +42,14 @@ exports.handler = async (event) => {
   const tuoi = Date.now() / 1000 - Number(ts);
 
   if (!dungChuKy || tuoi < 0 || tuoi > MAX_GIAY) {
-    return chan();
+    return chan("Link không hợp lệ hoặc đã hết hạn.");
   }
 
   const host = (event.headers || {}).host;
   const dich = `https://${host}/.netlify/functions/check?t=${t}`;
   const loc =
-    "https://api.phienchoso.com/tukhoa.php?token=" +
+    API[loai] +
+    "?token=" +
     encodeURIComponent(process.env.PCS_TOKEN) +
     "&url=" +
     encodeURIComponent(dich);
