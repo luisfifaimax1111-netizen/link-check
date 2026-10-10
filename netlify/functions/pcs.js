@@ -5,7 +5,7 @@ const MAX_GIAY = 1800; // link hết hạn sau 30 phút
 // Địa chỉ API từng loại nhiệm vụ của Phiên Chợ Số
 const API = {
   tukhoa: "https://api.phienchoso.com/tukhoa.php",
-  review: "", // điền địa chỉ API Review vào đây khi có
+  review: "https://api.phienchoso.com/review.php",
 };
 
 function chan(msg) {
